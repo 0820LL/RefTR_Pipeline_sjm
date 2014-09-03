@@ -67,7 +67,7 @@ job_begin
     cmd sh %s
 job_end
 ''' % (self.jobname, self.shell)
-        return txt
+        return tx
 ################################# SJM END #######################################
 ######################## check sample name BEGIN ################################
 def checkSample(sample):
@@ -111,13 +111,12 @@ parser.add_argument('--ex',help="the steps you do not wanna perform",default=Non
 ######################### parse the arguments END ################################
 ################### extract and check the parameters BEGIN #######################
 argv = vars(parser.parse_args())
-
 project=argv['project'].strip()
 sample=argv['sample'].strip()
 samples=sample.split(',')
 samples_tmp=list(set(samples))
 for s in samples:
-  checkSample(s)
+    checkSample(s)
 assert len(samples)==len(samples_tmp)
 #-----------------------------------------------------------------------
 mapfiles=[each.strip() for each in argv['mapfile'].strip().split(',') if each.strip() != '']
@@ -174,7 +173,7 @@ else:
 if argv['group'].find(':') == -1:
     excludes.append(3)
 if ( len(argv['group'].split(',') ) == 1) or (5 in excludes):
-  excludes.extend([7,8,9])
+    excludes.extend([7,8,9])
 includes=all_content-set(excludes)
 #-----------------------------------------------------------------------
 ss = argv['ss'].strip()
