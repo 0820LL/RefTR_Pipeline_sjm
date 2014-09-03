@@ -13,7 +13,7 @@ import re
 import argparse
 import ConfigParser
 
-root__dir=os.getcwd()
+root_dir=os.getcwd()
 
 ################################# SJM BEGIN ####################################
 class job(object):
@@ -87,7 +87,7 @@ Max length is 8, no windows reserved words like CON PRN...
 parser = argparse.ArgumentParser(description="RefTR pipline v4.0")
 parser.add_argument('--project',help='project name, maybe same with the name of root dir, which will be displayed in the final report title, [REQUIRED]',required=True)
 parser.add_argument('--sample',help="sample names(sample1,sample2,...)  warning: order sensitive!",required=True)
-parser.add_argument('--fq',help="the original directory of the raw fastq reads, [REQUIRED]",required=True,default=None)
+parser.add_argument('--fq',help="the original directory of the raw fastq reads, [REQUIRED]",default=None)
 parser.add_argument('--mapfile',help="mapfile files (mapfile1,mapfile2.The first column of mapfile is the NH number ,the second column of mapfile is the sample name)",default=None)
 parser.add_argument('--raw_dir',help="the original directory of the raw fastq reads keep order in line with mapfile files (raw_dir1,raw_dir2)",default=None)
 parser.add_argument('--ad',help="the original directory of the adapter list, ",default=None)
@@ -200,34 +200,34 @@ if (set([1]).issubset(includes)):
         flag_repeat=False
     else:
         groups_iter=[]
-                if ':' in argv['group'].strip(':'):
-                        flag_repeat=True
-                        groups=[each.strip().split(':') for each in argv['group'].strip().strip(':').split(',') if each.strip() != '']
-                        for each in groups:
-                                groups_iter+=each
-                        group_iter_n=[]
-                        for each in groups_iter:
-                                if each not in group_iter_n:
-                                        group_iter_n.append(each)
-                        groups_iter=group_iter_n
-                        group=','.join([':'.join(each) for each in groups])
-                else:
-                        flag_repeat=False
-                        groups=[each.strip() for each in argv['group'].strip().split(',') if each.strip() != '']
-                        for each in groups:
-                                groups_iter.append(each)
-                        group=','.join(groups)
-                assert set(groups_iter).issubset(samples)
+        if ':' in argv['group'].strip(':'):
+            flag_repeat=True
+            groups=[each.strip().split(':') for each in argv['group'].strip().strip(':').split(',') if each.strip() != '']
+            for each in groups:
+                groups_iter+=each
+            group_iter_n=[]
+            for each in groups_iter:
+                if each not in group_iter_n:
+                    group_iter_n.append(each)
+            groups_iter=group_iter_n
+            group=','.join([':'.join(each) for each in groups])
+        else:
+            flag_repeat=False
+            groups=[each.strip() for each in argv['group'].strip().split(',') if each.strip() != '']
+            for each in groups:
+                groups_iter.append(each)
+            group=','.join(groups)
+            assert set(groups_iter).issubset(samples)
         group_iter=','.join(groups_iter)
 
     if argv['groupname'] == None:
         if flag_repeat == False:
-                        groupname_tmp=groups
-                else:
-                        groupname_tmp=['group'+str(k+1) for k in range(len(groups))]
+            groupname_tmp=groups
         else:
-                groupname_tmp=[each.strip() for each in argv['groupname'].split(',') if each.strip() != '']
-                assert len(groupname_tmp) == len(groups)
+            groupname_tmp=['group'+str(k+1) for k in range(len(groups))]
+    else:
+        groupname_tmp=[each.strip() for each in argv['groupname'].split(',') if each.strip() != '']
+        assert len(groupname_tmp) == len(groups)
         groupname=','.join(groupname_tmp)
 
     compare = argv['compare'].strip()
@@ -249,7 +249,7 @@ if (set([1]).issubset(includes)):
         temp2.append(':'.join(temp1))
     compares_name=','.join(temp2)
     if argv['venn']:
-            venn = argv['venn'].strip()
+        venn = argv['venn'].strip()
         com_pairs=compare.split(',')
         venn_clusters=[each.split('_') for each in venn.split(',')]
         temp1=[]
@@ -316,7 +316,7 @@ if set([4,5,9]).issubset(includes):
             print 'Error:  the parameters --ppi_blast and --ppi_number are not consensus!\n'
             exit()
 if argv['genenamefile']:
-        genenamefile = argv['genenamefile'].strip()
+    genenamefile = argv['genenamefile'].strip()
     genenamefile = os.path.abspath(genenamefile)
     assert os.path.isfile(genenamefile)
 #################### extract and check the parameters END ########################
@@ -453,7 +453,7 @@ def create_config(project,config_file):
     cf.write(open(config_file, 'w'))
 ########################## generate a config file END ############################
 
-====
+#====
 
 ##generate QC##
 def generate_qc():
