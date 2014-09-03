@@ -179,9 +179,9 @@ includes=all_content-set(excludes)
 ss = argv['ss'].strip()
 number = argv['number'].strip()
 if argv['length']:
-        length = argv['length'].strip()
+    length = argv['length'].strip()
 else:
-        length = '100'
+    length = '100'
 fa = argv['fa'].strip()
 fa = os.path.abspath(fa)
 suffix_fa=['.1.bt2','.2.bt2','.3.bt2','.4.bt2','.rev.1.bt2','.rev.2.bt2']
@@ -304,9 +304,9 @@ if set([4,5,8]).issubset(includes):
         species = 'kaas'
 if set([4,5,9]).issubset(includes):
     if argv['ppi_number']:
-            ppi_number = argv['ppi_number'].strip()
+        ppi_number = argv['ppi_number'].strip()
     if argv['ppi_blast']:
-            ppi_blast = argv['ppi_blast'].strip()
+        ppi_blast = argv['ppi_blast'].strip()
     if argv['ppi_blast']:
         if argv['ppi_number'] == None:
             print 'Error:  the parameters --ppi_blast and --ppi_number are not consensus!\n'
@@ -390,7 +390,7 @@ ppidir = root_dir + '/PPI_TR'
 candir = root_dir + 'CAN_TR'
 snpdir = root_dir + 'SNP_TR'
 ####################### create or initial directory END ##########################
-############################ import scripts BEGIN ################################
+#################### import scripts from config.ini BEGIN ########################
 config = ConfigParser.ConfigParser()
 config.read("/BJPROJ/RNA/lilin/WORK/RefTR_sjm/Moudles/config.ini")
 ## for QC ##
@@ -429,7 +429,7 @@ ppi_db = config.get("enrich","ppi_db")
 resultReport = config.get("report","resultReport")
 dataRelease = config.get("report","dataRelease")
 byeBye = config.get("report","byeBye")
-############################# import scripts END #################################
+##################### import scripts from config.ini END #########################
 ######################### generate a config file BEGIN ###########################
 def create_config(project,config_file):
     cf = ConfigParser.ConfigParser()
@@ -452,25 +452,24 @@ def create_config(project,config_file):
     cf.set('para','genenamefile',genenamefile)
     cf.write(open(config_file, 'w'))
 ########################## generate a config file END ############################
-
-#====
-
-##generate QC##
+############################ QC and QC report BEGIN ##############################
+## generate QC ##
 def generate_qc():
     rundir = qcdir
     cmd = '''
 cd %s
 perl %s \\
--fq %s -se-pe se -n %s -o %s -spe %s -R %s -G %s -bed %s -mapfile %s \\
+-fq %s -se-pe pe -n %s -o %s -spe %s -R %s -G %s -bed %s -mapfile %s \\
 ''' % (qcdir,AllRunQC,fq,sample,qcdir,ss,fa,gtf,root_dir+'/QC_DGE/sorted.bed', mapfile)
-    if argv['index']: cmd += " -m_ad y -index %s"  % (index)
-    elif argv['ad']: cmd += " -ad %s" % (ad)
+    if argv['index']:
+        cmd += " -m_ad y -index %s"  % (index)
+    elif argv['ad']:
+        cmd += " -ad %s" % (ad)
     return cmd,rundir
 def qc(sample):
     rundir = qcdir+'/'+sample
-    cmd = 'sh '+rundir+'/'+sample+'_QC_se.sh'
+    cmd = 'sh '+rundir+'/'+sample+'_QC.sh'
     return cmd,rundir
-
 def qcreport():
     rundir = qcreportdir
     create_dir(qcreportdir)
@@ -478,14 +477,11 @@ def qcreport():
 sh %s -dir %s -sample %s -title %s -results %s
 ''' %(QCReport,qcdir,sample,project,qcreportdir)
     return cmd,rundir
-
-
-
-
-##creat dir and shells##
+## create dir and shells ##
 create_dir(logdir)
-######  config  file    ###########
+######### config  file ###########
 create_config(project,'%s/project.ini' % (root_dir) )
+
 ##QC
 
 if not os.path.exists(qcdir):
@@ -528,168 +524,8 @@ for each in qc_jobs:
     qc_jobfile.write('order %s after %s\n' % (QCreport_job.jobname,qc_jobs[each].jobname))
 qc_jobfile.write('log_dir %s\n' %(logdir))
 qc_jobfile.close()
-"""
-#####analysis jobs discription
-analysis_jobfile = open(logdir+'/'+project+'_analysis.JOB','w')
-if set([1,2]).issubset(includes):
-    analysis_jobfile.write(generate_diff_job.sjm())
-    analysis_jobfile.write(diff_job.sjm())
-if set([1,2,3]).issubset(includes):
-    analysis_jobfile.write(generate_Curve_job.sjm())
-    for job in saturation_jobs:
-        analysis_jobfile.write(saturation_jobs[job].sjm())
-    for job in density_jobs:
-        analysis_jobfile.write(density_jobs[job].sjm())
 
-    analysis_jobfile.write(diffsum_job.sjm())
-    analysis_jobfile.write(swissprot_blast_job.sjm())
-    analysis_jobfile.write(kobas_blast_job.sjm())
 
-if set([1,2,4]).issubset(includes):
-    for job in go_jobs_all:
-        analysis_jobfile.write(go_jobs_all[job].sjm())
-    for job in go_jobs_up:
-        analysis_jobfile.write(go_jobs_up[job].sjm())
-    for job in go_jobs_down:
-        analysis_jobfile.write(go_jobs_down[job].sjm())
-if set([1,2,5]).issubset(includes):
-    for job in kobas_jobs_all:
-        analysis_jobfile.write(kobas_jobs_all[job].sjm())
-    for job in kobas_jobs_up:
-        analysis_jobfile.write(kobas_jobs_up[job].sjm())
-    for job in kobas_jobs_down:
-        analysis_jobfile.write(kobas_jobs_down[job].sjm())
-    analysis_jobfile.write(kobas_path_job.sjm())
-if set([1,2,6]).issubset(includes):
-    for job in ppi_jobs_all:
-        analysis_jobfile.write(ppi_jobs_all[job].sjm())
-    for job in ppi_jobs_up:
-        analysis_jobfile.write(ppi_jobs_up[job].sjm())
-    for job in ppi_jobs_down:
-        analysis_jobfile.write(ppi_jobs_down[job].sjm())
-"""
-"""
-####job order
-if set([1,2]).issubset(includes):
-    analysis_jobfile.write("order %s after %s\n" % (diff_job.jobname, generate_diff_job.jobname))
-if set([1,2,3]).issubset(includes):
-    for job in saturation_jobs:
-        analysis_jobfile.write("order %s after %s\n" % (saturation_jobs[job].jobname, generate_Curve_job.jobname))
-    for job in density_jobs:
-        analysis_jobfile.write("order %s after %s\n" % (density_jobs[job].jobname, generate_Curve_job.jobname))
-        analysis_jobfile.write('order %s after %s\n' % (diffsum_job.jobname, diff_job.jobname))
-        analysis_jobfile.write('order %s after %s\n' % (swissprot_blast_job.jobname, diff_job.jobname))
-        analysis_jobfile.write('order %s after %s\n' % (kobas_blast_job.jobname, diff_job.jobname))
-if set([1,2,4]).issubset(includes):
-    for job in go_jobs_all:
-        analysis_jobfile.write('order %s after %s\n' % (go_jobs_all[job].jobname, diff_job.jobname))
-    for job in go_jobs_up:
-        analysis_jobfile.write('order %s after %s\n' % (go_jobs_up[job].jobname, diff_job.jobname))
-    for job in go_jobs_down:
-        analysis_jobfile.write('order %s after %s\n' % (go_jobs_down[job].jobname, diff_job.jobname))
-if set([1,2,5]).issubset(includes):
-    for job in kobas_jobs_all:
-        analysis_jobfile.write('order %s after %s\n' % (kobas_jobs_all[job].jobname, kobas_blast_job.jobname))
-        analysis_jobfile.write('order %s after %s\n' % (kobas_path_job.jobname, kobas_jobs_all[job].jobname))
-    for job in kobas_jobs_up:
-        analysis_jobfile.write('order %s after %s\n' % (kobas_jobs_up[job].jobname, kobas_blast_job.jobname))
-        analysis_jobfile.write('order %s after %s\n' % (kobas_path_job.jobname, kobas_jobs_up[job].jobname))
-    for job in kobas_jobs_down:
-        analysis_jobfile.write('order %s after %s\n' % (kobas_jobs_down[job].jobname, kobas_blast_job.jobname))
-        analysis_jobfile.write('order %s after %s\n' % (kobas_path_job.jobname, kobas_jobs_down[job].jobname))
-if set([1,2,6]).issubset(includes):
-    for job in ppi_jobs_all:
-        analysis_jobfile.write('order %s after %s\n' % (ppi_jobs_all[job].jobname, diff_job.jobname))
-    for job in ppi_jobs_up:
-        analysis_jobfile.write('order %s after %s\n' % (ppi_jobs_up[job].jobname, diff_job.jobname))
-    for job in ppi_jobs_down:
-        analysis_jobfile.write('order %s after %s\n' % (ppi_jobs_down[job].jobname, diff_job.jobname))
-
-analysis_jobfile.write('log_dir %s\n' %(logdir))
-analysis_jobfile.close()
-"""
 open(root_dir+'/sjm_QC.sh','w').write('/PUBLIC/software/public/System/sjm-1.2.0/bin/sjm %s \n' %(logdir+'/'+project+'_QC.JOB'))
-#open(root_dir+'/sjm_Analysis.sh','w').write('/PUBLIC/software/public/System/sjm-1.2.0/bin/sjm %s \n' %(logdir+'/'+project+'_analysis.JOB'))
 assert not os.system('chmod +x %s' % (root_dir+'/sjm_QC.sh'))
-#assert not os.system('chmod +x %s' % (root_dir+'/sjm_Analysis.sh'))
 
-
-
-
-
-
-
-"""
-
-
-
-
-
-
-def generate_diff(samples):
-    rundir = diffdir
-    readcount = []
-    for eachsample in samples:
-        temp='%s/Diff_DGE/readcount/%s.readcount' % (root_dir,eachsample)
-        readcount.append(temp)
-    readcount=','.join(readcount)
-    create_dir(diffdir)
-    sam = qcdir+'/sam'
-    cmd = '''
-cd %s
-perl %s \\
--fa %s -sam %s -g %s -o %s \\
--group %s -groupname %s -compare %s -venn %s \\
--spe %s  -i %s
-''' % (diffdir,runDiff,fa,sam,gtf,diffdir,group,groupname,compare,venn,ss,readcount)
-    if argv['genenamefile']: cmd += ' -genenamefile %s ' % (genenamefile)
-    return cmd,rundir
-
-def diff():
-    rundir = diffdir
-    cmd = "sh %s/runDiff_analysis.sh" % (diffdir)
-    return cmd,diffdir
-def generate_curve():
-    rundir = curvedir
-    create_dir(curvedir)
-    create_dir(curvedir+'/SaturationCurve')
-    create_dir(curvedir+'/density')
-    bam = qcdir+'/bam'
-    cmd = '''
-python %s  -bam %s -sample %s -n %s -r %s -fa %s -gtf %s -o %s
-#sh %s
-sh %s
-''' % (runCurve,bam,sample,number,length,fa,gtf,curvedir,curvedir+'/generate_Curve.sh',curvedir+'/SaturationCurve/prepare_gtf_bed.sh')
-    return cmd,rundir
-def run_saturation(sample):
-    saturationCurve = curvedir + '/SaturationCurve'
-    rundir = saturationCurve
-    cmd = '''
-cd %s
-sh %s/%s.runSaturation.sh
-''' % (saturationCurve,saturationCurve,sample)
-    return cmd,rundir
-
-def run_density(sample):
-    density = curvedir + '/density'
-    rundir = density
-    cmd = '''
-sh  %s/%s/%s.runDensity.sh
-''' % (density,sample,sample)
-    return cmd,rundir
-
-def diffsum():
-    rundir = diffdir
-    cmd = 'perl /PUBLIC/source/RNA/RefRNA/DGE/scriptdir/diffsum.pl -diffdir %s ' % (diffdir)
-    return cmd,rundir
-def go(compare,subgroup, id):
-    temp=compare.split(':')
-    dir=groupnames[int(temp[0])-1]+'vs'+groupnames[int(temp[1])-1]
-    rundir = godir + '/'+ subgroup + '/' + dir
-    out=rundir
-    create_dir(out)
-    length=diffdir+'/Diff/genelength'
-    result=out+'/'+dir+'.GO_enrichment_result.xls'
-    cmd = '''
-
-"""
