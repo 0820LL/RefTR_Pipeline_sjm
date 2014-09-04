@@ -398,7 +398,7 @@ gtf2bed = config.get("qc", "gtf2bed")
 AllRunQC = config.get("qc", "allrunQC")
 QCReport = config.get("qc", "QCreport")
 ## for CAN ##
-runCNA = config.get("can","runCAN")
+runCAN = config.get("can","runCAN")
 novelhmm = config.get("can","novelhmm")
 ## for SNP ##
 runGATK = config.get("snp","runGATK")
@@ -531,6 +531,40 @@ open(root_dir+'/sjm_QC.sh','w').write('/PUBLIC/software/public/System/sjm-1.2.0/
 assert not os.system('chmod +x %s' % (root_dir+'/sjm_QC.sh'))
 ############################## QC and QCreport END ###############################
 ################################ Analysis BEGIN ##################################
+def generate_can():
+    if ss == 'no':
+        lib = 'fr-unstranded'
+    elif ss == 'yes':
+        lib == 'fr-firststrand'
+    else:
+        lib == 'fr-secondstrand'
+    rundir = candir
+    create_dir(rundir)
+    cmd = '''
+python runCAN -R %s -G %s -i %s -sam %s -o %s -lib %s -group %s
+mkdir %s/CAN_TR/CAN/NovelGene
+python %s/qsubRun_lilin.py
+
+''' %(fa,gtf,bam,sam,root_dir+'/CNA_TR/CAN',lib,group,groupname,root_dir,root_dir+'/CAN_TR')
+    return cmd,rundir
+def generate_snp():
+    rundir = snpdir
+    create_dir(rundir)
+    cmd = '''
+python runGATK -R %s -t bam -i %s -o %s -b %s -n %s -gff %s
+''' %(fa,bam,root_dir+'/SNP_TR/SNP',sample,sample,gtf)
+    return cmd,rundir
+
+if set([1]).issubset(includes):
+    cmd,rundir = generate_can()
+    jobname =
+    shell =
+    open(shell,'w').write(cmd)
+    generate_can_job = job(jobname,shell)
+
+
+if set([1,2]).issubset(includes):
+
 
 ################################# Analysis END ###################################
 ######################### Report and data release BEGIN ##########################
