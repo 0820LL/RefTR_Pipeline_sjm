@@ -455,17 +455,21 @@ def create_config(project,config_file):
     cf.set('para','genenamefile',genenamefile)
     cf.write(open(config_file, 'w'))
 ########################## generate a config file END ############################
-creat_dir(logdir)
+create_dir(logdir)
 create_config(project,'%s/project.ini' %(root_dir))
 ############################# QC and QCreport BEGIN ##############################
-## generate QC ##
 def generate_qc():
     rundir = qcdir
     cmd = '''
 cd %s
+awk '{if($3=="exon") {print $0}}' %s > %s
+msort -k mf1 -k nf4 %s > %s
+perl %s %s %S
 perl %s \\
 -fq %s -se-pe pe -n %s -o %s -spe %s -R %s -G %s -bed %s -mapfile %s \\
-''' % (qcdir,AllRunQC,fq,sample,qcdir,ss,fa,gtf,root_dir+'/QC_DGE/sorted.bed', mapfile)
+''' % (git,root_dir+'/QC_TR/exon.gtf',root_dir+'/QC_TR/exon.gtf',root_dir+'/QC_TR/sorted.gtf',gtf2bed,root_dir+'/QC_TR/sorted.gtf',root_dir+'/QC_TR/sorted.bed',qcdir,AllRunQC,fq,sample,qcdir,ss,fa,gtf,root_dir+'/QC_TR/sorted.bed', mapfile)
+    if argv['mapfile']:
+        cmd += "-mapfile %s" %(mapfile)
     if argv['index']:
         cmd += " -m_ad y -index %s"  % (index)
     elif argv['ad']:
@@ -482,15 +486,13 @@ def qcreport():
 sh %s -dir %s -sample %s -title %s -results %s
 ''' %(QCReport,qcdir,sample,project,qcreportdir)
     return cmd,rundir
-
-## QC
-
+### QC
 if not os.path.exists(qcdir):
     os.mkdir(qcdir)
 cmd,rundir = generate_qc()
 shell = rundir+'/generate_QC.sh'
 open(shell,'w').write(cmd)
-generate_qc_job = job1('generate_qc',shell)
+generate_qc_job = job('generate_qc',1,1,shell)
 
 qc_jobs = {}
 for eachsample in samples:
@@ -501,31 +503,36 @@ for eachsample in samples:
     open(shell,'w').write(script)
     eachjob = job(jobname,5,8,shell)
     qc_jobs[eachsample] = eachjob
-
 ### QC Report
 script,tmpdir = qcreport()
 shell = tmpdir+'/QC_report.sh'
 open(shell,'w').write(script)
 QCreport_job = job('qc_report',1,1,shell)
-
-
-#######################
-##creat sjm config file
-#######################
+###############################################
+## generate sjm description file of QC BEGIN ##
+###############################################
 qc_jobfile = open(logdir+'/'+project+'_QC.JOB','w')
-######  QC jobs discription
+## Job Specification Blocks
 qc_jobfile.write(generate_qc_job.sjm())
 for each in qc_jobs:
     qc_jobfile.write(qc_jobs[each].sjm())
 qc_jobfile.write(QCreport_job.sjm())
-# jobs order
+## jobs order
 for each in qc_jobs:
     qc_jobfile.write('order %s after %s\n' % (qc_jobs[each].jobname, generate_qc_job.jobname))
     qc_jobfile.write('order %s after %s\n' % (QCreport_job.jobname,qc_jobs[each].jobname))
-qc_jobfile.write('log_dir %s\n' %(logdir))
+## log_dir
+qc_jobfile.write('\nlog_dir %s\n' %(logdir))
 qc_jobfile.close()
-
-
+#############################################
+## generate sjm description file of QC END ##
+#############################################
 open(root_dir+'/sjm_QC.sh','w').write('/PUBLIC/software/public/System/sjm-1.2.0/bin/sjm %s \n' %(logdir+'/'+project+'_QC.JOB'))
 assert not os.system('chmod +x %s' % (root_dir+'/sjm_QC.sh'))
 ############################## QC and QCreport END ###############################
+################################ Analysis BEGIN ##################################
+
+################################# Analysis END ###################################
+######################### Report and data release BEGIN ##########################
+
+########################## Report and data release END ###########################
