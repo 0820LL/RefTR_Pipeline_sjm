@@ -547,6 +547,8 @@ def generate_can():
         lib == 'fr-secondstrand'
     rundir = candir
     create_dir(rundir)
+    bam = root_dir+'/QC_TR/bam'
+    sam = root_dir+'/QC_TR/sam'
     cmd = '''
 python runCAN -R %s -G %s -i %s -sam %s -o %s -lib %s -group %s
 mkdir %s/CAN_TR/CAN/NovelGene
@@ -556,6 +558,7 @@ python %s/qsubRun_lilin.py
 def generate_snp():
     rundir = snpdir
     create_dir(rundir)
+    bam = root_dir+'/QC_TR/bam'
     cmd = '''
 python runGATK -R %s -t bam -i %s -o %s -b %s -n %s -gff %s
 ''' %(fa,bam,root_dir+'/SNP_TR/SNP',sample,sample,gtf)
