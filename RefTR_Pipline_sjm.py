@@ -67,7 +67,14 @@ job_begin
     cmd sh %s
 job_end
 ''' % (self.jobname, self.shell)
-        return tx
+        return txt
+    def sjm_py(self):
+        txt = '''
+job_begin
+    name %s
+    host localhost
+    cmd python %s
+''' %(self.jobname,self.shell)
 ################################# SJM END #######################################
 ######################## check sample name BEGIN ################################
 def checkSample(sample):
@@ -544,7 +551,6 @@ def generate_can():
 python runCAN -R %s -G %s -i %s -sam %s -o %s -lib %s -group %s
 mkdir %s/CAN_TR/CAN/NovelGene
 python %s/qsubRun_lilin.py
-
 ''' %(fa,gtf,bam,sam,root_dir+'/CNA_TR/CAN',lib,group,groupname,root_dir,root_dir+'/CAN_TR')
     return cmd,rundir
 def generate_snp():
@@ -557,15 +563,38 @@ python runGATK -R %s -t bam -i %s -o %s -b %s -n %s -gff %s
 
 if set([1]).issubset(includes):
     cmd,rundir = generate_can()
-    jobname =
-    shell =
+    jobname = 'generate_CAN'
+    shell = candir+'/generate_CAN.sh'
     open(shell,'w').write(cmd)
-    generate_can_job = job(jobname,shell)
-
+    generate_can_job = LocalJob(jobname,shell)
 
 if set([1,2]).issubset(includes):
-
-
+    cmd,rundir = generate_snp()
+    jobname = 'generate_SNP'
+    shell = snpdir+'/generate_SNP.sh'
+    open(shell,'w').write(cmd)
+    generate_snp_job = job(jobname,1,1,shell)
+    jobname2 = 'qsub_workflow'
+    shell2 = snpdir+'/qsub_workflow.py'
+    qsub_wokflow_job = LocalJob(jobname2,shell2)
+##### analysis jobs description file
+## Job Specification Blocks
+analysis_jobfile = open(logdir+'/'+project+'_analysis.JOB','w')
+if set([1]).issubset(includes):
+    analysis_jobfile.write(generate_can_job.sjm())
+if set([1,2]).issubset(includes):
+    analysis_jobfile.write(generate_snp_job.sjm())
+    analysis_jobfile.write(qsub_wokflow_job.sjm_py())
+## jobs order
+if set([1]).issubset(includes):
+    pass
+if set([1,2]).issubset(includes):
+    analysis_jobfile.write("order %s after %s\n") %(qsub_wokflow_job.jobname,generate_snp_job.jobname)
+## logdir
+analysis_jobfile.write('log_dir %s\n' %(logdir))
+analysis_jobfile.close()
+open(root_dir+'/sjm_Analysis.sh','w').write('/PUBLIC/software/public/System/sjm-1.2.0/bin/sjm %s \n' %(logdir+'/'+project+'_analysis.JOB'))
+assert not os.system('chmod +x %s' % (root_dir+'/sjm_Analysis.sh'))
 ################################# Analysis END ###################################
 ######################### Report and data release BEGIN ##########################
 
