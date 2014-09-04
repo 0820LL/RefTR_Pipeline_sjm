@@ -455,7 +455,9 @@ def create_config(project,config_file):
     cf.set('para','genenamefile',genenamefile)
     cf.write(open(config_file, 'w'))
 ########################## generate a config file END ############################
-############################ QC and QC report BEGIN ##############################
+creat_dir(logdir)
+create_config(project,'%s/project.ini' %(root_dir))
+############################# QC and QCreport BEGIN ##############################
 ## generate QC ##
 def generate_qc():
     rundir = qcdir
@@ -480,10 +482,6 @@ def qcreport():
 sh %s -dir %s -sample %s -title %s -results %s
 ''' %(QCReport,qcdir,sample,project,qcreportdir)
     return cmd,rundir
-## create dir and shells ##
-create_dir(logdir)
-######### config  file ###########
-create_config(project,'%s/project.ini' % (root_dir) )
 
 ## QC
 
@@ -511,7 +509,6 @@ open(shell,'w').write(script)
 QCreport_job = job('qc_report',1,1,shell)
 
 
-
 #######################
 ##creat sjm config file
 #######################
@@ -531,4 +528,4 @@ qc_jobfile.close()
 
 open(root_dir+'/sjm_QC.sh','w').write('/PUBLIC/software/public/System/sjm-1.2.0/bin/sjm %s \n' %(logdir+'/'+project+'_QC.JOB'))
 assert not os.system('chmod +x %s' % (root_dir+'/sjm_QC.sh'))
-
+############################## QC and QCreport END ###############################
