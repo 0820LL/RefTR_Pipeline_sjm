@@ -466,8 +466,8 @@ awk '{if($3=="exon") {print $0}}' %s > %s
 msort -k mf1 -k nf4 %s > %s
 perl %s %s %s
 perl %s \\
--fq %s -se-pe pe -n %s -o %s -spe %s -R %s -G %s -bed %s -mapfile %s \\
-''' % (qcdir,root_dir+'/QC_TR/exon.gtf',root_dir+'/QC_TR/exon.gtf',root_dir+'/QC_TR/sorted.gtf',gtf2bed,root_dir+'/QC_TR/sorted.gtf',root_dir+'/QC_TR/sorted.bed',qcdir,AllRunQC,fq,sample,qcdir,ss,fa,gtf,root_dir+'/QC_TR/sorted.bed', mapfile)
+-fq %s -se-pe pe -n %s -o %s -spe %s -R %s -G %s -bed %s \\
+''' % (qcdir,gtf,root_dir+'/QC_TR/exon.gtf',root_dir+'/QC_TR/exon.gtf',root_dir+'/QC_TR/sorted.gtf',gtf2bed,root_dir+'/QC_TR/sorted.gtf',root_dir+'/QC_TR/sorted.bed',AllRunQC,fq,sample,qcdir,ss,fa,gtf,root_dir+'/QC_TR/sorted.bed')
     if argv['mapfile']:
         cmd += "-mapfile %s" %(mapfile)
     if argv['index']:
