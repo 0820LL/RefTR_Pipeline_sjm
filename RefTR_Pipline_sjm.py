@@ -389,8 +389,8 @@ godir = root_dir + '/GOSeq_TR'
 blastdir = root_dir + '/Blast_TR'
 kobasdir = root_dir + '/KOBAS_TR'
 ppidir = root_dir + '/PPI_TR'
-candir = root_dir + 'CAN_TR'
-snpdir = root_dir + 'SNP_TR'
+candir = root_dir + '/CAN_TR'
+snpdir = root_dir + '/SNP_TR'
 def create_dir(directory):
     if not os.path.exists(directory):
         os.system('mkdir -p %s' % (directory))
