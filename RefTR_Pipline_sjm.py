@@ -372,12 +372,7 @@ if argv['genenamefile']:
     display.write('genenamefile: %s\n' % (genenamefile) )
 display.close()
 ######################### display all parameters END #############################
-##################### create or initialize directory BEGIN #######################
-def create_dir(directory):
-    if not os.path.exists(directory):
-        os.system('mkdir -p %s' % (directory))
-    else:
-        exit("%s already exists!" % directory)
+###################### define and create directory BEGIN #########################
 logdir = root_dir + '/log'
 qcdir = root_dir + '/QC_TR'
 qcreportdir = root_dir+'/QC_TR/QCreport'
@@ -389,19 +384,27 @@ kobasdir = root_dir + '/KOBAS_TR'
 ppidir = root_dir + '/PPI_TR'
 candir = root_dir + 'CAN_TR'
 snpdir = root_dir + 'SNP_TR'
-####################### create or initial directory END ##########################
+def create_dir(directory):
+    if not os.path.exists(directory):
+        os.system('mkdir -p %s' % (directory))
+    else:
+        exit("%s already exists!" % directory)
+####################### define and create directory END ##########################
 #################### import scripts from config.ini BEGIN ########################
 config = ConfigParser.ConfigParser()
 config.read("/BJPROJ/RNA/lilin/WORK/RefTR_sjm/Moudles/config.ini")
-## for QC ##
+## for QC and QCreport ##
+gtf2bed = config.get("qc", "gtf2bed")
 AllRunQC = config.get("qc", "allrunQC")
 QCReport = config.get("qc", "QCreport")
-## for Cufflinks ##
-## for ASprofile ##
-## for NovoGene ##
+## for CAN ##
+runCNA = config.get("can","runCAN")
+novelhmm = config.get("can","novelhmm")
 ## for SNP ##
-## for Indel ##
+runGATK = config.get("snp","runGATK")
 ## for DEXSeq ##
+python = config.get("dexseq","python")
+runDEXSeq = config.get("dexseq","runDEXSeq")
 ## for diff ##
 runDiff = config.get("diff","runDiff")
 runCurve = config.get("diff","runCurve")
@@ -482,7 +485,7 @@ create_dir(logdir)
 ######### config  file ###########
 create_config(project,'%s/project.ini' % (root_dir) )
 
-##QC
+## QC
 
 if not os.path.exists(qcdir):
     os.mkdir(qcdir)
