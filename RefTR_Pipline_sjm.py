@@ -74,7 +74,9 @@ job_begin
     name %s
     host localhost
     cmd python %s
+job_end
 ''' %(self.jobname,self.shell)
+        return txt
 ################################# SJM END #######################################
 ######################## check sample name BEGIN ################################
 def checkSample(sample):
@@ -552,18 +554,18 @@ def generate_can():
     bam = root_dir+'/QC_TR/bam'
     sam = root_dir+'/QC_TR/sam'
     cmd = '''
-python runCAN -R %s -G %s -i %s -sam %s -o %s -lib %s -group %s
+python %s -R %s -G %s -i %s -sam %s -o %s -lib %s -group %s -groupname %s
 mkdir %s/CAN_TR/CAN/NovelGene
 python %s/qsubRun_lilin.py
-''' %(fa,gtf,bam,sam,root_dir+'/CNA_TR/CAN',lib,group,groupname,root_dir,root_dir+'/CAN_TR')
+''' %(runCAN,fa,gtf,bam,sam,root_dir+'/CNA_TR/CAN',lib,group,groupname,root_dir,root_dir+'/CAN_TR')
     return cmd,rundir
 def generate_snp():
     rundir = snpdir
     create_dir(rundir)
     bam = root_dir+'/QC_TR/bam'
     cmd = '''
-python runGATK -R %s -t bam -i %s -o %s -b %s -n %s -gff %s
-''' %(fa,bam,root_dir+'/SNP_TR/SNP',sample,sample,gtf)
+python %s -R %s -t bam -i %s -o %s -b %s -n %s -gff %s
+''' %(runGATK,fa,bam,root_dir+'/SNP_TR/SNP',sample,sample,gtf)
     return cmd,rundir
 def generate_dexseq():
     rundir = dexseqdir
@@ -576,7 +578,7 @@ def generate_dexseq():
         DEXseq_groups[i] = DEXseq_groups[i].split(':')
     DEXseq_compare = []
     DEXseq_compares = compare.split(',')
-    for each in DEXseq_groups:
+    for each in DEXseq_compares:
         temp = each.split(':')
         tmp1 = DEXseq_groups[int(temp[0])-1]
         tmp2 = DEXseq_groups[int(temp[1])-1]
@@ -585,8 +587,8 @@ def generate_dexseq():
             DEXseq_compare.append(each)
     DEXseq_compare = ','.join(DEXseq_compare)
     cmd = '''
-python runDEXSeq -G %s -i %s -g %s -n %s -c %s -o %s -p yes -s %s -a 10 -m %s
-''' %(allsamples_gtf,sam,group,groupname,DEXseq_compare,root_dir+'/DEXseq_TR/DEXseq',ss,allsamples_tmap)
+python %s -G %s -i %s -g %s -n %s -c %s -o %s -p yes -s %s -a 10 -m %s
+''' %(runDEXSeq,allsamples_gtf,sam,group,groupname,DEXseq_compare,root_dir+'/DEXseq_TR/DEXseq',ss,allsamples_tmap)
     return cmd,rundir
 
 ##### main pipline
@@ -631,9 +633,9 @@ if set([1,3]).issubset(includes):
 if set([1]).issubset(includes):
     pass
 if set([1,2]).issubset(includes):
-    analysis_jobfile.write("order %s after %s\n") %(qsub_wokflow_job.jobname,generate_snp_job.jobname)
+    analysis_jobfile.write("order %s after %s\n" %(qsub_wokflow_job.jobname,generate_snp_job.jobname))
 if set([1,3]).issubset(includes):
-    analysis_jobfile.write("order %s after %s\n") %(runDEXSeq_job.jobname,generate_dexseq_job.jobname)
+    analysis_jobfile.write("order %s after %s\n" %(runDEXSeq_job.jobname,generate_dexseq_job.jobname))
 
 
 ## logdir
