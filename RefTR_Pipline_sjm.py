@@ -551,7 +551,6 @@ def generate_can():
         lib == 'fr-secondstrand'
     rundir = candir
     create_dir(rundir)
-    os.chdir(rundir)
     bam = root_dir+'/QC_TR/bam'
     sam = root_dir+'/QC_TR/sam'
     cmd = '''
@@ -563,7 +562,6 @@ python %s/qsubRun_lilin.py
 def generate_snp():
     rundir = snpdir
     create_dir(rundir)
-    os.chdir(rundir)
     bam = root_dir+'/QC_TR/bam'
     cmd = '''
 python %s -R %s -t bam -i %s -o %s -b %s -n %s -gff %s
@@ -572,7 +570,6 @@ python %s -R %s -t bam -i %s -o %s -b %s -n %s -gff %s
 def generate_dexseq():
     rundir = dexseqdir
     create_dir(rundir)
-    os.chdir(rundir)
     sam = root_dir+'/QC_TR/sam'
     allsamples_gtf = root_dir+'/CAN_TR/CAN/merged_gtf_tmap/allsamples.gtf'
     allsamples_tmap = root_dir+'/CAN_TR/CAN/merged_gtf_tmap/allsamples.allsamples.gtf.tmap'
