@@ -557,7 +557,7 @@ def generate_can():
 python %s -R %s -G %s -i %s -sam %s -o %s -lib %s -group %s -groupname %s
 mkdir %s/CAN_TR/CAN/NovelGene
 python %s/qsubRun_lilin.py
-''' %(runCAN,fa,gtf,bam,sam,root_dir+'/CNA_TR/CAN',lib,group,groupname,root_dir,root_dir+'/CAN_TR')
+''' %(runCAN,fa,gtf,bam,sam,root_dir+'/CAN_TR/CAN',lib,group,groupname,root_dir,root_dir+'/CAN_TR')
     return cmd,rundir
 def generate_snp():
     rundir = snpdir
