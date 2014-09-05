@@ -635,6 +635,7 @@ if set([1]).issubset(includes):
 if set([1,2]).issubset(includes):
     analysis_jobfile.write("order %s after %s\n" %(qsub_wokflow_job.jobname,generate_snp_job.jobname))
 if set([1,3]).issubset(includes):
+    analysis_jobfile.write("order %s after %s\n" %(generate_dexseq_job.jobname,generate_can_job.jobname))
     analysis_jobfile.write("order %s after %s\n" %(runDEXSeq_job.jobname,generate_dexseq_job.jobname))
 
 
