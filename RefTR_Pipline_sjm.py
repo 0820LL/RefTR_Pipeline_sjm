@@ -486,6 +486,7 @@ perl %s \\
 def qc(sample):
     rundir = qcdir+'/'+sample
     cmd = 'sh '+rundir+'/'+sample+'_QC.sh'
+    create_dir(rundir)
     return cmd,rundir
 def qcreport():
     rundir = qcreportdir
@@ -505,7 +506,6 @@ generate_qc_job = job('generate_qc',1,1,shell)
 qc_jobs = {}
 for eachsample in samples:
     script,tmpdir = qc(eachsample)
-    create_dir(tmpdir)
     jobname = eachsample+'_qc'
     shell = tmpdir+'/'+eachsample+'_QC.sh'
     open(shell,'w').write(script)
