@@ -391,6 +391,7 @@ kobasdir = root_dir + '/KOBAS_TR'
 ppidir = root_dir + '/PPI_TR'
 candir = root_dir + '/CAN_TR'
 snpdir = root_dir + '/SNP_TR'
+dexseqdir = root_dir + '/DEXseq_TR'
 def create_dir(directory):
     if not os.path.exists(directory):
         os.system('mkdir -p %s' % (directory))
@@ -538,6 +539,7 @@ open(root_dir+'/sjm_QC.sh','w').write('/PUBLIC/software/public/System/sjm-1.2.0/
 assert not os.system('chmod +x %s' % (root_dir+'/sjm_QC.sh'))
 ############################## QC and QCreport END ###############################
 ################################ Analysis BEGIN ##################################
+##### wrap the function in function
 def generate_can():
     if ss == 'no':
         lib = 'fr-unstranded'
@@ -563,14 +565,37 @@ def generate_snp():
 python runGATK -R %s -t bam -i %s -o %s -b %s -n %s -gff %s
 ''' %(fa,bam,root_dir+'/SNP_TR/SNP',sample,sample,gtf)
     return cmd,rundir
+def generate_dexseq():
+    rundir = dexseqdir
+    create_dir(rundir)
+    sam = root_dir+'/QC_TR/sam'
+    allsamples_gtf = root_dir+'/CAN_TR/CAN/merged_gtf_tmap/allsamples.gtf'
+    allsamples_tmap = root_dir+'/CAN_TR/CAN/merged_gtf_tmap/allsamples.allsamples.gtf.tmap'
+    DEXseq_groups = group.split(',')
+    for i,each in enumerate(DEXseq_groups):
+        DEXseq_groups[i] = DEXseq_groups[i].split(':')
+    DEXseq_compare = []
+    DEXseq_compares = compare.split(',')
+    for each in DEXseq_groups:
+        temp = each.split(':')
+        tmp1 = DEXseq_groups[int(temp[0])-1]
+        tmp2 = DEXseq_groups[int(temp[1])-1]
+        tmp = tmp1 + tmp2
+        if (len(DEXseq_groups[int(temp[0])-1])>1 and len(DEXseq_groups[int(temp[1])-1])>1 and len(list(set(tmp)))==len(tmp1)+len(tmp2)):
+            DEXseq_compare.append(each)
+    DEXseq_compare = ','.join(DEXseq_compare)
+    cmd = '''
+python runDEXSeq -G %s -i %s -g %s -n %s -c %s -o %s -p yes -s %s -a 10 -m %s
+''' %(allsamples_gtf,sam,group,groupname,DEXseq_compare,root_dir+'/DEXseq_TR/DEXseq',ss,allsamples_tmap)
+    return cmd,rundir
 
+##### main pipline
 if set([1]).issubset(includes):
     cmd,rundir = generate_can()
     jobname = 'generate_CAN'
     shell = candir+'/generate_CAN.sh'
     open(shell,'w').write(cmd)
     generate_can_job = LocalJob(jobname,shell)
-
 if set([1,2]).issubset(includes):
     cmd,rundir = generate_snp()
     jobname = 'generate_SNP'
@@ -580,6 +605,16 @@ if set([1,2]).issubset(includes):
     jobname2 = 'qsub_workflow'
     shell2 = snpdir+'/qsub_workflow.py'
     qsub_wokflow_job = LocalJob(jobname2,shell2)
+if set([1,3]).issubset(includes):
+    cmd,rundir = generate_dexseq()
+    jobname = 'generate_DEXseq'
+    shell = dexseqdir+'/generate_DEXseq.sh'
+    open(shell,'w').write(cmd)
+    generate_dexseq_job = job(jobname,1,1,shell)
+    jobname2 = 'runDEXSeq'
+    shell2 = dexseqdir+'/runDEXSeq.sh'
+    runDEXSeq_job = job(jobname2,2,1,shell2)
+
 ##### analysis jobs description file
 ## Job Specification Blocks
 analysis_jobfile = open(logdir+'/'+project+'_analysis.JOB','w')
@@ -588,11 +623,19 @@ if set([1]).issubset(includes):
 if set([1,2]).issubset(includes):
     analysis_jobfile.write(generate_snp_job.sjm())
     analysis_jobfile.write(qsub_wokflow_job.sjm_py())
+if set([1,3]).issubset(includes):
+    analysis_jobfile.write(generate_dexseq_job.sjm())
+    analysis_jobfile.write(runDEXSeq_job.sjm())
+
 ## jobs order
 if set([1]).issubset(includes):
     pass
 if set([1,2]).issubset(includes):
     analysis_jobfile.write("order %s after %s\n") %(qsub_wokflow_job.jobname,generate_snp_job.jobname)
+if set([1,3]).issubset(includes):
+    analysis_jobfile.write("order %s after %s\n") %(runDEXSeq_job.jobname,generate_dexseq_job.jobname)
+
+
 ## logdir
 analysis_jobfile.write('log_dir %s\n' %(logdir))
 analysis_jobfile.close()
