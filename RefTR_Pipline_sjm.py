@@ -660,7 +660,7 @@ if set([1,2]).issubset(includes):
         analysis_jobfile.write("order %s after %s\n" %(each.jobname,wokflow1_job.jobname))
         analysis_jobfile.write("order %s after %s\n" %(workflow3_job.jobname,each.jobname))
 if set([1,3]).issubset(includes):
-    analysis_jobfile.write("order %s after %s\n" %(generate_dexseq_job.jobname,generate_can_job.jobname))
+    analysis_jobfile.write("order %s after %s\n" %(generate_dexseq_job.jobname,runCuffmerge_Cuffcompare_job.jobname))
     analysis_jobfile.write("order %s after %s\n" %(runDEXSeq_job.jobname,generate_dexseq_job.jobname))
 
 
