@@ -556,7 +556,7 @@ def generate_can():
     cmd = '''
 python %s -R %s -G %s -i %s -sam %s -o %s -lib %s -group %s -groupname %s
 mkdir %s/CAN_TR/CAN/NovelGene
-''' %(runCAN,fa,gtf,bam,sam,root_dir+'/CAN_TR/CAN',lib,group,groupname,root_dir,root_dir+'/CAN_TR')
+''' %(runCAN,fa,gtf,bam,sam,root_dir+'/CAN_TR/CAN',lib,group,groupname,root_dir)
     return cmd,rundir
 def generate_snp():
     rundir = snpdir
@@ -614,7 +614,7 @@ if set([1,2]).issubset(includes):
     jobname = 'workflow1'
     shell = snpdir+'/workflow1.sh'
     wokflow1_job = job(jobname,10,6,shell)
-    runworkflow2 = []
+    runworkflow2_job = []
     for each in samples:
         jobname = 'workflow2_'+each
         shell = snpdir+'/workflow2_'+each+'.sh'
@@ -643,7 +643,7 @@ if set([1]).issubset(includes):
 if set([1,2]).issubset(includes):
     analysis_jobfile.write(generate_snp_job.sjm())
     analysis_jobfile.write(wokflow1_job.sjm())
-    for each in runworkflow2:
+    for each in runworkflow2_job:
         analysis_jobfile.write(each.sjm())
     analysis_jobfile.write(workflow3_job.sjm())
 if set([1,3]).issubset(includes):
@@ -656,7 +656,7 @@ if set([1]).issubset(includes):
         analysis_jobfile.write("order %s after %s\n" %(runCuffmerge_Cuffcompare_job.jobname,each.jobname))
 if set([1,2]).issubset(includes):
     analysis_jobfile.write("order %s after %s\n" %(wokflow1_job.jobname,generate_snp_job.jobname))
-    for each in runworkflow2:
+    for each in runworkflow2_job:
         analysis_jobfile.write("order %s after %s\n" %(each.jobname,wokflow1_job.jobname))
         analysis_jobfile.write("order %s after %s\n" %(workflow3_job.jobname,each.jobname))
 if set([1,3]).issubset(includes):
