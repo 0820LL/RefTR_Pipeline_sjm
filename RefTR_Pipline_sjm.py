@@ -556,7 +556,6 @@ def generate_can():
     cmd = '''
 python %s -R %s -G %s -i %s -sam %s -o %s -lib %s -group %s -groupname %s
 mkdir %s/CAN_TR/CAN/NovelGene
-python %s/qsubRun_lilin.py
 ''' %(runCAN,fa,gtf,bam,sam,root_dir+'/CAN_TR/CAN',lib,group,groupname,root_dir,root_dir+'/CAN_TR')
     return cmd,rundir
 def generate_snp():
@@ -598,15 +597,31 @@ if set([1]).issubset(includes):
     shell = candir+'/generate_CAN.sh'
     open(shell,'w').write(cmd)
     generate_can_job = LocalJob(jobname,shell)
+    runCufflinks_job = []
+    for each in samples:
+        jobname = 'runCufflinks_'+each
+        shell = candir+'/runCufflinks_'+each+'.sh'
+        runCufflinks_job.append(job(jobname,5,2,shell))
+    jobname = 'runCuffmerge_Cuffcompare'
+    shell = candir+'/runCuffmerge_Cuffcompare.sh'
+    runCuffmerge_Cuffcompare_job = job(jobname,5,2,shell)
 if set([1,2]).issubset(includes):
     cmd,rundir = generate_snp()
     jobname = 'generate_SNP'
     shell = snpdir+'/generate_SNP.sh'
     open(shell,'w').write(cmd)
     generate_snp_job = job(jobname,1,1,shell)
-    jobname2 = 'qsub_workflow'
-    shell2 = snpdir+'/qsub_workflow.py'
-    qsub_wokflow_job = LocalJob(jobname2,shell2)
+    jobname = 'workflow1'
+    shell = snpdir+'/workflow1.sh'
+    wokflow1_job = job(jobname,10,6,shell)
+    runworkflow2 = []
+    for each in samples:
+        jobname = 'workflow2_'+each
+        shell = snpdir+'/workflow2_'+each+'.sh'
+        runworkflow2_job.append(job(jobname,10,6,shell))
+    jobname = 'workflow3'
+    shell = snpdir+'/workflow3.sh'
+    workflow3_job = job(jobname,10,6,shell)
 if set([1,3]).issubset(includes):
     cmd,rundir = generate_dexseq()
     jobname = 'generate_DEXseq'
@@ -622,18 +637,28 @@ if set([1,3]).issubset(includes):
 analysis_jobfile = open(logdir+'/'+project+'_analysis.JOB','w')
 if set([1]).issubset(includes):
     analysis_jobfile.write(generate_can_job.sjm())
+    for each in runCufflinks_job:
+        analysis_jobfile.write(each.sjm())
+    analysis_jobfile.write(runCuffmerge_Cuffcompare_job.sjm())
 if set([1,2]).issubset(includes):
     analysis_jobfile.write(generate_snp_job.sjm())
-    analysis_jobfile.write(qsub_wokflow_job.sjm_py())
+    analysis_jobfile.write(wokflow1_job.sjm())
+    for each in runworkflow2:
+        analysis_jobfile.write(each.sjm())
+    analysis_jobfile.write(workflow3_job.sjm())
 if set([1,3]).issubset(includes):
     analysis_jobfile.write(generate_dexseq_job.sjm())
     analysis_jobfile.write(runDEXSeq_job.sjm())
 
 ## jobs order
 if set([1]).issubset(includes):
-    pass
+    for each in runCufflinks_job:
+        analysis_jobfile.write("order %s after %s\n" %(runCuffmerge_Cuffcompare_job.jobname,each.jobname))
 if set([1,2]).issubset(includes):
-    analysis_jobfile.write("order %s after %s\n" %(qsub_wokflow_job.jobname,generate_snp_job.jobname))
+    analysis_jobfile.write("order %s after %s\n" %(wokflow1_job.jobname,generate_snp_job.jobname))
+    for each in runworkflow2:
+        analysis_jobfile.write("order %s after %s\n" %(each.jobname,wokflow1_job.jobname))
+        analysis_jobfile.write("order %s after %s\n" %(workflow3_job.jobname,each.jobname))
 if set([1,3]).issubset(includes):
     analysis_jobfile.write("order %s after %s\n" %(generate_dexseq_job.jobname,generate_can_job.jobname))
     analysis_jobfile.write("order %s after %s\n" %(runDEXSeq_job.jobname,generate_dexseq_job.jobname))
