@@ -328,6 +328,8 @@ if argv['genenamefile']:
     genenamefile = argv['genenamefile'].strip()
     genenamefile = os.path.abspath(genenamefile)
     assert os.path.isfile(genenamefile)
+else:
+    genenamefile = root_dir+'/Blast_TR/Blast_Swissprot/diffgene_union.genenames'
 #################### extract and check the parameters END ########################
 ######################## display all parameters BEGIN ############################
 display = open(root_dir + '/' + 'TR_command.txt','w')
