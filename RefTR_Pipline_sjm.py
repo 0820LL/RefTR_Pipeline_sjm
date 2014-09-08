@@ -379,6 +379,8 @@ display.write('PPI number: %s\n' % (ppi_number) )
 display.write('PPI blast: %s\n' % (ppi_blast))
 if argv['genenamefile']:
     display.write('genenamefile: %s\n' % (genenamefile) )
+else:
+    display.write('genenamefile: %s\n' % (root_dir+'/Blast_TR/Blast_Swissprot/diffgene_union.genenames'))
 display.close()
 ######################### display all parameters END #############################
 ###################### define and create directory BEGIN #########################
@@ -1029,7 +1031,7 @@ if set([1,2]).issubset(includes):
     analysis_jobfile.write(workflow3_job.sjm())
 if set([1,3]).issubset(includes):
     analysis_jobfile.write(generate_dexseq_job.sjm())
-    analysis_jobfile.write(runDEXSeq_job.sjm()) ##
+    analysis_jobfile.write(runDEXSeq_job.sjm()) ###
 
 if set([1,4,5]).issubset(includes):
     analysis_jobfile.write(generate_diff_job.sjm())
@@ -1081,7 +1083,8 @@ if set([1,2]).issubset(includes):
 if set([1,3]).issubset(includes):
     analysis_jobfile.write("order %s after %s\n" %(generate_dexseq_job.jobname,runCuffmerge_Cuffcompare_job.jobname))
     analysis_jobfile.write("order %s after %s\n" %(runDEXSeq_job.jobname,generate_dexseq_job.jobname))
-if set([1,4,5).issubset(includes):
+if set([1,4,5]).issubset(includes):
+    #analysis_jobfile.write("order %s after %s\n" %(generate_diff_job.jobname,runCuffmerge_Cuffcompare_job.jobname))
     analysis_jobfile.write("order %s after %s\n" % (diff_job.jobname, generate_diff_job.jobname))
 if set([1,4,6]).issubset(includes):
     for job in saturation_jobs:
