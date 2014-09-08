@@ -589,6 +589,232 @@ def generate_dexseq():
 python %s -G %s -i %s -g %s -n %s -c %s -o %s -p yes -s %s -a 10 -m %s
 ''' %(runDEXSeq,allsamples_gtf,sam,group,groupname,DEXseq_compare,root_dir+'/DEXseq_TR/DEXseq',ss,allsamples_tmap)
     return cmd,rundir
+def generate_diff(samples):
+    rundir = diffdir
+    readcount = []
+    for eachsample in samples:
+        temp='%s/Diff_DGE/readcount/%s.readcount' % (root_dir,eachsample)
+        readcount.append(temp)
+    readcount=','.join(readcount)
+    create_dir(diffdir)
+    sam = qcdir+'/sam'
+    cmd = '''
+cd %s
+perl %s \\
+-fa %s -sam %s -g %s -o %s \\
+-group %s -groupname %s -compare %s -venn %s \\
+-spe %s  -i %s
+''' % (diffdir,runDiff,fa,sam,gtf,diffdir,group,groupname,compare,venn,ss,readcount)
+    if argv['genenamefile']: cmd += ' -genenamefile %s ' % (genenamefile)
+    return cmd,rundir
+def diff():
+    rundir = diffdir
+    cmd = "sh %s/runDiff_analysis.sh" % (diffdir)
+    return cmd,diffdir
+def generate_curve():
+    rundir = curvedir
+    create_dir(curvedir)
+    create_dir(curvedir+'/SaturationCurve')
+    create_dir(curvedir+'/density')
+    bam = qcdir+'/bam'
+    cmd = '''
+python %s  -bam %s -sample %s -n %s -r %s -fa %s -gtf %s -o %s
+#sh %s
+sh %s
+''' % (runCurve,bam,sample,number,length,fa,gtf,curvedir,curvedir+'/generate_Curve.sh',curvedir+'/SaturationCurve/prepare_gtf_bed.sh')
+    return cmd,rundir
+def run_saturation(sample):
+    saturationCurve = curvedir + '/SaturationCurve'
+    rundir = saturationCurve
+    cmd = '''
+cd %s
+sh %s/%s/%s_runSaturation.sh
+''' % (saturationCurve,saturationCurve,sample,sample)
+    return cmd,rundir
+
+def run_density(sample):
+    density = curvedir + '/density'
+    rundir = density
+    cmd = '''
+cd %s
+sh  %s/%s/%s.runDensity.sh
+''' % (density,density,sample,sample)
+    return cmd,rundir
+def diffsum():
+    rundir = diffdir
+    cmd = 'perl /PUBLIC/source/RNA/RefRNA/DGE/scriptdir/diffsum.pl -diffdir %s ' % (diffdir)
+    return cmd,rundir
+def go_all(compare, subgroup, id):
+    temp=compare.split(':')
+    dir=groupnames[int(temp[0])-1]+'vs'+groupnames[int(temp[1])-1]
+    rundir = godir + '/'+ subgroup + '/' + dir
+    out=rundir
+    create_dir(out)
+    length=diffdir+'/Diff/genelength'
+    result=out+'/'+dir+'.GO_enrichment_result.xls'
+    result_up_dpwn=out+'/'+dir+'.GO_enrichment_result_up_down.xls'
+    cmd = '''
+###############%s#####################
+perl %s -i %s -goann %s -n %s -o %s -length %s
+perl %s %s %s %s
+''' % (dir, goseq_graph, id, goann, dir, out, length, changeGO_up_down,out+'/'+dir+'.GO_enrichment_result.xls',diffdir+'/Diff/'+dir+'/'+dir+'.diffgene.xls',out+'/'+dir+'.GO_enrichment_result_up_down.xls')
+    cmd+= '''
+%s %s %s %s %s
+%s %s %s %s %s
+''' % (R, goBar, result, out, dir, R, goBar2, result_up_dpwn, out, dir)
+
+    return cmd,rundir
+def go(compare, subgroup, id):
+    temp=compare.split(':')
+    dir=groupnames[int(temp[0])-1]+'vs'+groupnames[int(temp[1])-1]
+    rundir = godir + '/'+ subgroup + '/' + dir
+    out=rundir
+    create_dir(out)
+    length=diffdir+'/Diff/genelength'
+    result=out+'/'+dir+'.GO_enrichment_result.xls'
+    cmd = '''
+###############%s#####################
+perl %s -i %s -goann %s -n %s -o %s -length %s
+''' % (dir, goseq_graph, id, goann, dir, out, length)
+    cmd += '''
+%s %s %s %s %s
+''' % (R, goBar, result, out, dir)
+
+    return cmd,rundir
+
+def swissprot_blast():
+    rundir = blastdir+'/Blast_Swissprot'
+    create_dir(rundir)
+    query=root_dir+'/Diff_DGE/Diff/diffgene_union.seq'
+    out=root_dir+'/Blast_DGE/Blast_Swissprot/diffgene_union.seq.blastout'
+    outdir1 = rundir
+    cmd = '''
+echo start blastx
+date
+%s -query %s -db %s -evalue 1e-5 -outfmt 5 -max_target_seqs 1 -num_threads 10 -out %s
+echo blastx end
+date
+''' % (blastx, query, uniprot_sprot, out)
+    cmd += '''
+perl %s %s %s
+''' % (extractIDsEVxml, out, outdir1+'/diffgene_union.genenames')
+    compare=root_dir+'/Diff_DGE/Diff/compare.txt'
+    indir=root_dir+'/Diff_DGE/Diff/'
+    outdir2=root_dir+'/Diff_DGE/Diff/DiffGeneList'
+    cmd += '''
+mkdir %s
+perl %s %s %s %s %s
+date
+''' % (outdir2,getdiffGN, indir,compare,outdir1+'/diffgene_union.genenames',outdir2)
+    return cmd,rundir
+
+def kobas_blast(species):
+    rundir = blastdir
+    if not os.path.exists(rundir): create_dir(rundir)
+    query=diffdir+'/Diff/diffgene_union.seq'
+    if species == 'kaas':
+        cmd = '''
+perl %s  -n -s %s
+python %s  %s /PUBLIC/database/Common/KEGG/kos %s
+''' % (auto_annotate, query, convert2kobas, root_dir + '/Diff_DGE/Diff/diffgene_union.seq.ko',root_dir + '/KOBAS_DGE/koID.annotation')
+    else:
+        blastout=root_dir+'/Blast_DGE/KOBAS_blast.xml'
+        cmd = '''
+perl %s  %s %s %s %s
+sh %s
+''' % (KEGG_step1_blast, query,species,blastout,root_dir+'/Blast_DGE/KOBAS_blast.sh', root_dir+'/Blast_DGE/KOBAS_blast.sh')
+    return cmd,rundir
+def kobas_pathway():
+    rundir = kobasdir
+    cmd = ' '
+    for compare in compares:
+        temp=compare.split(':')
+        dir=groupnames[int(temp[0])-1]+'vs'+groupnames[int(temp[1])-1]
+        out='%s/%s/%s' % (kobasdir, 'ALL', dir)
+        result=root_dir+'/KOBAS_DGE/ALL/'+dir+'/'+'add.'+dir+'.identify.xls'
+        diff=root_dir+'/Diff_DGE/Diff/'+dir+'/'+dir+'.diffgene.xls'
+        cmd += '''
+echo "###############%s#####################"
+cd %s
+python %s --table %s --diff %s
+mv %s %s
+''' % (dir, out, pathway_annotation, result, diff, 'add.'+dir+'.identify.xls_rendered_html_detail.html',dir+'.html')
+        out='%s/%s/%s' % (kobasdir, 'UP', dir)
+        result = root_dir+'/KOBAS_DGE/UP/'+dir+'/'+'add.'+dir+'.identify.xls'
+        diff = root_dir+'/Diff_DGE/Diff/'+dir+'/'+dir+'.diffgene_up.xls'
+        cmd += '''
+echo "###############%s#####################"
+cd %s
+python %s --table %s --diff %s
+mv %s %s
+''' % (dir, out, pathway_annotation, result, diff, 'add.'+dir+'.identify.xls_rendered_html_detail.html',dir+'.html')
+        out='%s/%s/%s' % (kobasdir, 'DOWN', dir)
+        result = root_dir+'/KOBAS_DGE/DOWN/'+dir+'/'+'add.'+dir+'.identify.xls'
+        diff = root_dir+'/Diff_DGE/Diff/'+dir+'/'+dir+'.diffgene_down.xls'
+        cmd += '''
+echo "###############%s#####################"
+cd %s
+python %s --table %s --diff %s
+mv %s %s
+''' % (dir, out, pathway_annotation, result, diff, 'add.'+dir+'.identify.xls_rendered_html_detail.html',dir+'.html')
+    return cmd, rundir
+
+
+def kobas(species,compare,subgroup,id=None):
+    temp=compare.split(':')
+    dir=groupnames[int(temp[0])-1]+'vs'+groupnames[int(temp[1])-1]
+    out = '%s/%s/%s' % (kobasdir, subgroup, dir)
+    rundir = out
+    script = rundir+'/run.sh'
+    blastout = root_dir+'/Blast_DGE/KOBAS_blast.xml'
+    create_dir(out)
+    if species != 'kaas':
+        cmd = '''
+echo ###############%s#####################
+perl %s -id %s -out-dir %s -species %s -blast-result %s -sample-names %s>%s
+sh %s
+''' %(dir, KEGG_step2_enrich, id,out,species,blastout,dir,script, script)
+    else:
+        cmd = '''
+perl %s -diff %s -ko %s -g %s
+''' % (runKEGG_enrich, id, root_dir + '/KOBAS_DGE/koID.annotation',dir)
+    return cmd, rundir
+
+def ppi(ppi_blast,compare,subgroup,id=None):
+    temp=compare.split(':')
+    dir=groupnames[int(temp[0])-1]+'vs'+groupnames[int(temp[1])-1]
+    seq=root_dir+'/Diff_DGE/Diff/Diff_Gene_Seq/'+dir+'.diffgene.seq'
+    out='%s/%s/%s' % (ppidir, subgroup, dir)
+    rundir = out
+    create_dir(rundir)
+    if ppi_blast == 'n':
+        cmd = '''
+python %s -p %s -g %s -o %s
+''' % (get_my_PPI, ppi_dir+'/PPI_'+ppi_number+'.txt',id,out+'/'+dir+'.ppi.txt')
+    elif ppi_blast == 'y':
+        cmd = '''
+python %s  --species %s --fa %s --outdir %s --name %s
+''' % (BLASTX_TO_PPI, ppi_number,seq,out,dir)
+    return cmd,rundir
+
+def generate_report():
+    rundir = resultdir
+    cmd = 'python %s' % resultReport
+    return cmd,rundir
+def data_release():
+    dr = root_dir+'/data_release.sh'
+    cmd = 'python %s' % dataRelease
+    if not os.path.exists(dr):
+        open(dr,'w').write(cmd)
+    else:
+        exit("#data_release.py already exists!#")
+def bye_bye():
+    bye = root_dir+'/byebye.sh'
+    cmd = 'python %s' % byeBye
+    if not os.path.exists(bye):
+        open(bye,'w').write(cmd)
+    else:
+        exit("##byebye.sh already exits!##")
 
 ##### main pipline
 if set([1]).issubset(includes):
@@ -632,6 +858,161 @@ if set([1,3]).issubset(includes):
     shell2 = dexseqdir+'/runDEXSeq.sh'
     runDEXSeq_job = job(jobname2,2,1,shell2)
 
+
+if set([1,4,5]).issubset(includes):
+
+    cmd,rundir = generate_diff(samples)
+    jobname = 'generate_Diff'
+    shell = diffdir+'/generate_Diff.sh'
+    open(shell,'w').write(cmd)
+    generate_diff_job = LocalJob(jobname,shell)
+
+    cmd,rundir = diff()
+    shell = rundir+'/runDiff_analysis.sh'
+    open(shell,'w').write(cmd)
+    jobname = 'runDiff_analysis'
+    diff_job = job(jobname,5,1,shell)
+
+    cmd,rundir = swissprot_blast()
+    shell = rundir+'/runBlast_swissprot.sh'
+    open(shell,'w').write(cmd)
+    jobname = 'runBlast_swissprot'
+    swissprot_blast_job = job(jobname,5,10,shell)
+
+    cmd,rundir = kobas_blast(species)
+    shell = rundir+'/KEGG_step1_Blast.sh'
+    open(shell,'w').write(cmd)
+    jobname = 'KEGG_step1_blast'
+    kobas_blast_job = job(jobname,5,10,shell)
+
+
+
+    cmd,rundir = diffsum()
+    shell = rundir+'/diffsum.sh'
+    open(shell,'w').write(cmd)
+    diffsum_job = LocalJob('diffsum', shell)
+
+if set([1,4,6]).issubset(includes):
+    cmd,rundir = generate_curve()
+    shell = rundir+'/generate_Curve.sh'
+    open(shell,'w').write(cmd)
+    jobname = 'generate_Curve'
+    generate_Curve_job = job(jobname,1,1,shell)
+
+    saturation_jobs = {}
+    for sample in samples:
+        cmd,rundir = run_saturation(sample)
+        shell = rundir+'/'+sample+'.runSaturation.sh'
+        open(shell,'w').write(cmd)
+        jobname = sample+'_saturation'
+        eachjob = job(jobname,10,1,shell)
+        saturation_jobs[sample] = eachjob
+    density_jobs = {}
+    for sample in samples:
+        cmd,rundir = run_density(sample)
+        shell = rundir+'/'+sample+'.runDensity.sh'
+        open(shell,'w').write(cmd)
+        jobname = sample+'_density'
+        eachjob = job(jobname,5,1,shell)
+        density_jobs[sample] = eachjob
+
+if set([1,4,5,7]).issubset(includes):
+    go_jobs_all = {}
+    for compare in compares:
+        temp=compare.split(':')
+        dir=groupnames[int(temp[0])-1]+'vs'+groupnames[int(temp[1])-1]
+        id=diffdir+'/Diff/'+dir+'/'+dir+'.diffgeneID'
+        cmd,rundir = go_all(compare,"ALL",id)
+        shell = '%s/runGOSeq_ALL.%s.sh' % (rundir,dir)
+        open(shell,'w').write(cmd)
+        jobname = '%s_GO_ALL' % dir
+        eachjob = job(jobname,5,1,shell)
+        go_jobs_all[dir] = eachjob
+    go_jobs_up = {}
+    for compare in compares:
+        temp=compare.split(':')
+        dir=groupnames[int(temp[0])-1]+'vs'+groupnames[int(temp[1])-1]
+        id=diffdir+'/Diff/'+dir+'/'+dir+'.diffgeneID_up'
+        cmd,rundir = go(compare,"UP",id)
+        shell = '%s/runGOSeq_UP.%s.sh' % (rundir,dir)
+        open(shell,'w').write(cmd)
+        jobname = '%s_GO_UP' % dir
+        eachjob = job(jobname,5,1,shell)
+        go_jobs_up[dir] = eachjob
+    go_jobs_down = {}
+    for compare in compares:
+        temp=compare.split(':')
+        dir=groupnames[int(temp[0])-1]+'vs'+groupnames[int(temp[1])-1]
+        id=diffdir+'/Diff/'+dir+'/'+dir+'.diffgeneID_down'
+        cmd,rundir = go(compare,"DOWN",id)
+        shell = '%s/runGOSeq_DOWN.%s.sh' % (rundir,dir)
+        open(shell,'w').write(cmd)
+        jobname = '%s_GO_DOWN' % dir
+        eachjob = job(jobname,5,1,shell)
+        go_jobs_down[dir] = eachjob
+
+if set([1,4,5,8]).issubset(includes):
+    kobas_jobs_all = {}
+    kobas_jobs_up = {}
+    kobas_jobs_down = {}
+    kobas_path_job = ''
+
+    for compare in compares:
+        temp=compare.split(':')
+        dir=groupnames[int(temp[0])-1]+'vs'+groupnames[int(temp[1])-1]
+        id_a=root_dir+'/Diff_DGE/Diff/'+dir+'/'+dir+'.diffgeneID'
+        cmd,rundir = kobas(species,compare,"ALL",id_a)
+        shell = "%s/runKOBAS_ALL.%s.sh" % (rundir, dir)
+        open(shell,'w').write(cmd)
+        kobas_jobs_all[dir] = job("%s_KOBAS_ALL" % (dir), 5, 1, shell)
+
+        id_u = root_dir+'/Diff_DGE/Diff/'+dir+'/'+dir+'.diffgeneID_up'
+        cmd,rundir = kobas(species,compare,"UP",id_u)
+        shell = "%s/runKOBAS_UP.%s.sh" % (rundir, dir)
+        open(shell,'w').write(cmd)
+        kobas_jobs_up[dir] = job("%s_KOBAS_UP" % (dir), 5, 1, shell)
+
+        id_d = root_dir+'/Diff_DGE/Diff/'+dir+'/'+dir+'.diffgeneID_down'
+        cmd,rundir = kobas(species,compare,"DOWN",id_d)
+        shell = "%s/runKOBAS_DOWN.%s.sh" % (rundir, dir)
+        open(shell,'w').write(cmd)
+        kobas_jobs_down[dir] = job("%s_KOBAS_DOWN" % (dir), 5, 1, shell)
+
+        cmd, rundir = kobas_pathway()
+        shell = '%s/run_pathway.sh' % (rundir)
+        open(shell,'w').write(cmd)
+        kobas_path_job = LocalJob('kobas_pathway',shell)
+
+if set([1,4,5,9]).issubset(includes):
+    ppi_jobs_all = {}
+    ppi_jobs_up = {}
+    ppi_jobs_down = {}
+
+    for compare in compares:
+        temp=compare.split(':')
+        dir=groupnames[int(temp[0])-1]+'vs'+groupnames[int(temp[1])-1]
+
+        id_a = root_dir+'/Diff_DGE/Diff/'+dir+'/'+dir+'.diffgeneID'
+        cmd,rundir = ppi(ppi_blast,compare,"ALL",id_a)
+        shell = "%s/runPPI_ALL.%s.sh" % (rundir,dir)
+        open(shell,'w').write(cmd)
+        ppi_jobs_all[dir] = job('%s_PPI_ALL' % (dir),5,7,shell)
+
+        id_u = root_dir+'/Diff_DGE/Diff/'+dir+'/'+dir+'.diffgeneID_up'
+        cmd,rundir = ppi(ppi_blast,compare,"UP",id_u)
+        shell = '%s/runPPI_UP.%s.sh' % (rundir,dir)
+        open(shell,'w').write(cmd)
+        ppi_jobs_up[dir] = job('%s_PPI_UP' % (dir),5,7,shell)
+
+        id_d = root_dir+'/Diff_DGE/Diff/'+dir+'/'+dir+'.diffgeneID_down'
+        cmd,rundir = ppi(ppi_blast,compare,'DOWN',id_d)
+        shell = '%s/runPPI_DOWN.%s.sh' % (rundir,dir)
+        open(shell,'w').write(cmd)
+        ppi_jobs_down[dir] = job('%s_PPI_DOWN' % (dir),5,7,shell)
+
+
+
+
 ##### analysis jobs description file
 ## Job Specification Blocks
 analysis_jobfile = open(logdir+'/'+project+'_analysis.JOB','w')
@@ -648,7 +1029,45 @@ if set([1,2]).issubset(includes):
     analysis_jobfile.write(workflow3_job.sjm())
 if set([1,3]).issubset(includes):
     analysis_jobfile.write(generate_dexseq_job.sjm())
-    analysis_jobfile.write(runDEXSeq_job.sjm())
+    analysis_jobfile.write(runDEXSeq_job.sjm()) ##
+
+if set([1,4,5]).issubset(includes):
+    analysis_jobfile.write(generate_diff_job.sjm())
+    analysis_jobfile.write(diff_job.sjm())
+if set([1,4,6]).issubset(includes):
+    analysis_jobfile.write(generate_Curve_job.sjm())
+    for job in saturation_jobs:
+        analysis_jobfile.write(saturation_jobs[job].sjm())
+    for job in density_jobs:
+        analysis_jobfile.write(density_jobs[job].sjm())
+
+    analysis_jobfile.write(diffsum_job.sjm())
+    analysis_jobfile.write(swissprot_blast_job.sjm())
+    analysis_jobfile.write(kobas_blast_job.sjm())
+
+if set([1,4,5,7]).issubset(includes):
+    for job in go_jobs_all:
+        analysis_jobfile.write(go_jobs_all[job].sjm())
+    for job in go_jobs_up:
+        analysis_jobfile.write(go_jobs_up[job].sjm())
+    for job in go_jobs_down:
+        analysis_jobfile.write(go_jobs_down[job].sjm())
+if set([1,4,5,8]).issubset(includes):
+    for job in kobas_jobs_all:
+        analysis_jobfile.write(kobas_jobs_all[job].sjm())
+    for job in kobas_jobs_up:
+        analysis_jobfile.write(kobas_jobs_up[job].sjm())
+    for job in kobas_jobs_down:
+        analysis_jobfile.write(kobas_jobs_down[job].sjm())
+    analysis_jobfile.write(kobas_path_job.sjm())
+if set([1,4,5,9]).issubset(includes):
+    for job in ppi_jobs_all:
+        analysis_jobfile.write(ppi_jobs_all[job].sjm())
+    for job in ppi_jobs_up:
+        analysis_jobfile.write(ppi_jobs_up[job].sjm())
+    for job in ppi_jobs_down:
+        analysis_jobfile.write(ppi_jobs_down[job].sjm())
+analysis_jobfile.write(result_report_job.sjm())
 
 ## jobs order
 if set([1]).issubset(includes):
@@ -662,7 +1081,52 @@ if set([1,2]).issubset(includes):
 if set([1,3]).issubset(includes):
     analysis_jobfile.write("order %s after %s\n" %(generate_dexseq_job.jobname,runCuffmerge_Cuffcompare_job.jobname))
     analysis_jobfile.write("order %s after %s\n" %(runDEXSeq_job.jobname,generate_dexseq_job.jobname))
-
+if set([1,4,5).issubset(includes):
+    analysis_jobfile.write("order %s after %s\n" % (diff_job.jobname, generate_diff_job.jobname))
+if set([1,4,6]).issubset(includes):
+    for job in saturation_jobs:
+        analysis_jobfile.write("order %s after %s\n" % (saturation_jobs[job].jobname, generate_Curve_job.jobname))
+    for job in density_jobs:
+        analysis_jobfile.write("order %s after %s\n" % (density_jobs[job].jobname, generate_Curve_job.jobname))
+        analysis_jobfile.write('order %s after %s\n' % (diffsum_job.jobname, diff_job.jobname))
+        analysis_jobfile.write('order %s after %s\n' % (swissprot_blast_job.jobname, diff_job.jobname))
+        analysis_jobfile.write('order %s after %s\n' % (kobas_blast_job.jobname, diff_job.jobname))
+if set([1,4,5,7]).issubset(includes):
+    for job in go_jobs_all:
+        analysis_jobfile.write('order %s after %s\n' % (go_jobs_all[job].jobname, diff_job.jobname))
+    for job in go_jobs_up:
+        analysis_jobfile.write('order %s after %s\n' % (go_jobs_up[job].jobname, diff_job.jobname))
+    for job in go_jobs_down:
+        analysis_jobfile.write('order %s after %s\n' % (go_jobs_down[job].jobname, diff_job.jobname))
+if set([1,4,5,8]).issubset(includes):
+    for job in kobas_jobs_all:
+        analysis_jobfile.write('order %s after %s\n' % (kobas_jobs_all[job].jobname, kobas_blast_job.jobname))
+        analysis_jobfile.write('order %s after %s\n' % (kobas_path_job.jobname, kobas_jobs_all[job].jobname))
+    for job in kobas_jobs_up:
+        analysis_jobfile.write('order %s after %s\n' % (kobas_jobs_up[job].jobname, kobas_blast_job.jobname))
+        analysis_jobfile.write('order %s after %s\n' % (kobas_path_job.jobname, kobas_jobs_up[job].jobname))
+    for job in kobas_jobs_down:
+        analysis_jobfile.write('order %s after %s\n' % (kobas_jobs_down[job].jobname, kobas_blast_job.jobname))
+        analysis_jobfile.write('order %s after %s\n' % (kobas_path_job.jobname, kobas_jobs_down[job].jobname))
+if set([1,4,5,9]).issubset(includes):
+    for job in ppi_jobs_all:
+        analysis_jobfile.write('order %s after %s\n' % (ppi_jobs_all[job].jobname, diff_job.jobname))
+    for job in ppi_jobs_up:
+        analysis_jobfile.write('order %s after %s\n' % (ppi_jobs_up[job].jobname, diff_job.jobname))
+    for job in ppi_jobs_down:
+        analysis_jobfile.write('order %s after %s\n' % (ppi_jobs_down[job].jobname, diff_job.jobname))
+#analysis_jobfile.write('order %s after %s\n' % ())
+if set([1,4,5,7,8,9]).issubset(includes):
+    for job in go_jobs_all:
+        analysis_jobfile.write('order %s after %s\n' % (result_report_job.jobname, go_jobs_all[job].jobname))
+    analysis_jobfile.write('order %s after %s\n' % (result_report_job.jobname, kobas_path_job.jobname))
+    for job in ppi_jobs_all:
+        analysis_jobfile.write('order %s after %s\n' % (result_report_job.jobname, ppi_jobs_all[job].jobname))
+else:
+    for job in saturation_jobs:
+        analysis_jobfile.write('order %s after %s\n' % (result_report_job.jobname, saturation_jobs[job].jobname))
+    for job in density_jobs:
+        analysis_jobfile.write('order %s after %s\n' % (result_report_job.jobname, saturation_jobs[job].jobname))
 
 ## logdir
 analysis_jobfile.write('log_dir %s\n' %(logdir))
