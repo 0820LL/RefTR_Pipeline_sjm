@@ -597,7 +597,7 @@ def generate_diff(samples):
     rundir = diffdir
     readcount = []
     for eachsample in samples:
-        temp='%s/Diff_DGE/readcount/%s.readcount' % (root_dir,eachsample)
+        temp='%s/Diff_TR/readcount/%s.readcount' % (root_dir,eachsample)
         readcount.append(temp)
     readcount=','.join(readcount)
     create_dir(diffdir)
@@ -689,8 +689,8 @@ perl %s -i %s -goann %s -n %s -o %s -length %s
 def swissprot_blast():
     rundir = blastdir+'/Blast_Swissprot'
     create_dir(rundir)
-    query=root_dir+'/Diff_DGE/Diff/diffgene_union.seq'
-    out=root_dir+'/Blast_DGE/Blast_Swissprot/diffgene_union.seq.blastout'
+    query=root_dir+'/Diff_TR/Diff/diffgene_union.seq'
+    out=root_dir+'/Blast_TR/Blast_Swissprot/diffgene_union.seq.blastout'
     outdir1 = rundir
     cmd = '''
 echo start blastx
@@ -702,9 +702,9 @@ date
     cmd += '''
 perl %s %s %s
 ''' % (extractIDsEVxml, out, outdir1+'/diffgene_union.genenames')
-    compare=root_dir+'/Diff_DGE/Diff/compare.txt'
-    indir=root_dir+'/Diff_DGE/Diff/'
-    outdir2=root_dir+'/Diff_DGE/Diff/DiffGeneList'
+    compare=root_dir+'/Diff_TR/Diff/compare.txt'
+    indir=root_dir+'/Diff_TR/Diff/'
+    outdir2=root_dir+'/Diff_TR/Diff/DiffGeneList'
     cmd += '''
 mkdir %s
 perl %s %s %s %s %s
@@ -720,13 +720,13 @@ def kobas_blast(species):
         cmd = '''
 perl %s  -n -s %s
 python %s  %s /PUBLIC/database/Common/KEGG/kos %s
-''' % (auto_annotate, query, convert2kobas, root_dir + '/Diff_DGE/Diff/diffgene_union.seq.ko',root_dir + '/KOBAS_DGE/koID.annotation')
+''' % (auto_annotate, query, convert2kobas, root_dir + '/Diff_TR/Diff/diffgene_union.seq.ko',root_dir + '/KOBAS_TR/koID.annotation')
     else:
-        blastout=root_dir+'/Blast_DGE/KOBAS_blast.xml'
+        blastout=root_dir+'/Blast_TR/KOBAS_blast.xml'
         cmd = '''
 perl %s  %s %s %s %s
 sh %s
-''' % (KEGG_step1_blast, query,species,blastout,root_dir+'/Blast_DGE/KOBAS_blast.sh', root_dir+'/Blast_DGE/KOBAS_blast.sh')
+''' % (KEGG_step1_blast, query,species,blastout,root_dir+'/Blast_TR/KOBAS_blast.sh', root_dir+'/Blast_TR/KOBAS_blast.sh')
     return cmd,rundir
 def kobas_pathway():
     rundir = kobasdir
@@ -735,8 +735,8 @@ def kobas_pathway():
         temp=compare.split(':')
         dir=groupnames[int(temp[0])-1]+'vs'+groupnames[int(temp[1])-1]
         out='%s/%s/%s' % (kobasdir, 'ALL', dir)
-        result=root_dir+'/KOBAS_DGE/ALL/'+dir+'/'+'add.'+dir+'.identify.xls'
-        diff=root_dir+'/Diff_DGE/Diff/'+dir+'/'+dir+'.diffgene.xls'
+        result=root_dir+'/KOBAS_TR/ALL/'+dir+'/'+'add.'+dir+'.identify.xls'
+        diff=root_dir+'/Diff_TR/Diff/'+dir+'/'+dir+'.diffgene.xls'
         cmd += '''
 echo "###############%s#####################"
 cd %s
@@ -744,8 +744,8 @@ python %s --table %s --diff %s
 mv %s %s
 ''' % (dir, out, pathway_annotation, result, diff, 'add.'+dir+'.identify.xls_rendered_html_detail.html',dir+'.html')
         out='%s/%s/%s' % (kobasdir, 'UP', dir)
-        result = root_dir+'/KOBAS_DGE/UP/'+dir+'/'+'add.'+dir+'.identify.xls'
-        diff = root_dir+'/Diff_DGE/Diff/'+dir+'/'+dir+'.diffgene_up.xls'
+        result = root_dir+'/KOBAS_TR/UP/'+dir+'/'+'add.'+dir+'.identify.xls'
+        diff = root_dir+'/Diff_TR/Diff/'+dir+'/'+dir+'.diffgene_up.xls'
         cmd += '''
 echo "###############%s#####################"
 cd %s
@@ -753,8 +753,8 @@ python %s --table %s --diff %s
 mv %s %s
 ''' % (dir, out, pathway_annotation, result, diff, 'add.'+dir+'.identify.xls_rendered_html_detail.html',dir+'.html')
         out='%s/%s/%s' % (kobasdir, 'DOWN', dir)
-        result = root_dir+'/KOBAS_DGE/DOWN/'+dir+'/'+'add.'+dir+'.identify.xls'
-        diff = root_dir+'/Diff_DGE/Diff/'+dir+'/'+dir+'.diffgene_down.xls'
+        result = root_dir+'/KOBAS_TR/DOWN/'+dir+'/'+'add.'+dir+'.identify.xls'
+        diff = root_dir+'/Diff_TR/Diff/'+dir+'/'+dir+'.diffgene_down.xls'
         cmd += '''
 echo "###############%s#####################"
 cd %s
@@ -770,7 +770,7 @@ def kobas(species,compare,subgroup,id=None):
     out = '%s/%s/%s' % (kobasdir, subgroup, dir)
     rundir = out
     script = rundir+'/run.sh'
-    blastout = root_dir+'/Blast_DGE/KOBAS_blast.xml'
+    blastout = root_dir+'/Blast_TR/KOBAS_blast.xml'
     create_dir(out)
     if species != 'kaas':
         cmd = '''
@@ -781,13 +781,13 @@ sh %s
     else:
         cmd = '''
 perl %s -diff %s -ko %s -g %s
-''' % (runKEGG_enrich, id, root_dir + '/KOBAS_DGE/koID.annotation',dir)
+''' % (runKEGG_enrich, id, root_dir + '/KOBAS_TR/koID.annotation',dir)
     return cmd, rundir
 
 def ppi(ppi_blast,compare,subgroup,id=None):
     temp=compare.split(':')
     dir=groupnames[int(temp[0])-1]+'vs'+groupnames[int(temp[1])-1]
-    seq=root_dir+'/Diff_DGE/Diff/Diff_Gene_Seq/'+dir+'.diffgene.seq'
+    seq=root_dir+'/Diff_TR/Diff/Diff_Gene_Seq/'+dir+'.diffgene.seq'
     out='%s/%s/%s' % (ppidir, subgroup, dir)
     rundir = out
     create_dir(rundir)
@@ -964,19 +964,19 @@ if set([1,4,5,8]).issubset(includes):
     for compare in compares:
         temp=compare.split(':')
         dir=groupnames[int(temp[0])-1]+'vs'+groupnames[int(temp[1])-1]
-        id_a=root_dir+'/Diff_DGE/Diff/'+dir+'/'+dir+'.diffgeneID'
+        id_a=root_dir+'/Diff_TR/Diff/'+dir+'/'+dir+'.diffgeneID'
         cmd,rundir = kobas(species,compare,"ALL",id_a)
         shell = "%s/runKOBAS_ALL.%s.sh" % (rundir, dir)
         open(shell,'w').write(cmd)
         kobas_jobs_all[dir] = job("%s_KOBAS_ALL" % (dir), 5, 1, shell)
 
-        id_u = root_dir+'/Diff_DGE/Diff/'+dir+'/'+dir+'.diffgeneID_up'
+        id_u = root_dir+'/Diff_TR/Diff/'+dir+'/'+dir+'.diffgeneID_up'
         cmd,rundir = kobas(species,compare,"UP",id_u)
         shell = "%s/runKOBAS_UP.%s.sh" % (rundir, dir)
         open(shell,'w').write(cmd)
         kobas_jobs_up[dir] = job("%s_KOBAS_UP" % (dir), 5, 1, shell)
 
-        id_d = root_dir+'/Diff_DGE/Diff/'+dir+'/'+dir+'.diffgeneID_down'
+        id_d = root_dir+'/Diff_TR/Diff/'+dir+'/'+dir+'.diffgeneID_down'
         cmd,rundir = kobas(species,compare,"DOWN",id_d)
         shell = "%s/runKOBAS_DOWN.%s.sh" % (rundir, dir)
         open(shell,'w').write(cmd)
@@ -996,19 +996,19 @@ if set([1,4,5,9]).issubset(includes):
         temp=compare.split(':')
         dir=groupnames[int(temp[0])-1]+'vs'+groupnames[int(temp[1])-1]
 
-        id_a = root_dir+'/Diff_DGE/Diff/'+dir+'/'+dir+'.diffgeneID'
+        id_a = root_dir+'/Diff_TR/Diff/'+dir+'/'+dir+'.diffgeneID'
         cmd,rundir = ppi(ppi_blast,compare,"ALL",id_a)
         shell = "%s/runPPI_ALL.%s.sh" % (rundir,dir)
         open(shell,'w').write(cmd)
         ppi_jobs_all[dir] = job('%s_PPI_ALL' % (dir),5,7,shell)
 
-        id_u = root_dir+'/Diff_DGE/Diff/'+dir+'/'+dir+'.diffgeneID_up'
+        id_u = root_dir+'/Diff_TR/Diff/'+dir+'/'+dir+'.diffgeneID_up'
         cmd,rundir = ppi(ppi_blast,compare,"UP",id_u)
         shell = '%s/runPPI_UP.%s.sh' % (rundir,dir)
         open(shell,'w').write(cmd)
         ppi_jobs_up[dir] = job('%s_PPI_UP' % (dir),5,7,shell)
 
-        id_d = root_dir+'/Diff_DGE/Diff/'+dir+'/'+dir+'.diffgeneID_down'
+        id_d = root_dir+'/Diff_TR/Diff/'+dir+'/'+dir+'.diffgeneID_down'
         cmd,rundir = ppi(ppi_blast,compare,'DOWN',id_d)
         shell = '%s/runPPI_DOWN.%s.sh' % (rundir,dir)
         open(shell,'w').write(cmd)
