@@ -1076,6 +1076,7 @@ analysis_jobfile.write(result_report_job.sjm())
 ## jobs order
 if set([1]).issubset(includes):
     for each in runCufflinks_job:
+        analysis_jobfile.write("order %s after %s\n" %(each.jobname,generate_can_job.jobname))
         analysis_jobfile.write("order %s after %s\n" %(runCuffmerge_Cuffcompare_job.jobname,each.jobname))
 if set([1,2]).issubset(includes):
     analysis_jobfile.write("order %s after %s\n" %(wokflow1_job.jobname,generate_snp_job.jobname))
