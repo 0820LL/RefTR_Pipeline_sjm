@@ -398,6 +398,8 @@ ppidir = root_dir + '/PPI_TR'
 candir = root_dir + '/CAN_TR'
 snpdir = root_dir + '/SNP_TR'
 dexseqdir = root_dir + '/DEXseq_TR'
+resultdir = root_dir+'/'+project+'_TR_result'
+
 def create_dir(directory):
     if not os.path.exists(directory):
         os.system('mkdir -p %s' % (directory))
