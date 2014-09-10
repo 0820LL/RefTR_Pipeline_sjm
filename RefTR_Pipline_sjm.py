@@ -805,20 +805,7 @@ def generate_report():
     rundir = resultdir
     cmd = 'python %s' % resultReport
     return cmd,rundir
-def data_release():
-    dr = root_dir+'/data_release.sh'
-    cmd = 'python %s' % dataRelease
-    if not os.path.exists(dr):
-        open(dr,'w').write(cmd)
-    else:
-        exit("#data_release.py already exists!#")
-def bye_bye():
-    bye = root_dir+'/byebye.sh'
-    cmd = 'python %s' % byeBye
-    if not os.path.exists(bye):
-        open(bye,'w').write(cmd)
-    else:
-        exit("##byebye.sh already exits!##")
+
 
 ##### main pipline
 if set([1]).issubset(includes):
@@ -1014,6 +1001,14 @@ if set([1,4,5,9]).issubset(includes):
         open(shell,'w').write(cmd)
         ppi_jobs_down[dir] = job('%s_PPI_DOWN' % (dir),5,7,shell)
 
+##result and report
+if not os.path.exists(resultdir):
+    create_dir(resultdir)
+    cmd, rundir = generate_report()
+    shell = '%s/result_report.sh' % rundir
+    open(shell,'w').write(cmd)
+    result_report_job = LocalJob('result_report', shell)
+
 
 
 
@@ -1121,18 +1116,17 @@ if set([1,4,5,9]).issubset(includes):
         analysis_jobfile.write('order %s after %s\n' % (ppi_jobs_up[job].jobname, diff_job.jobname))
     for job in ppi_jobs_down:
         analysis_jobfile.write('order %s after %s\n' % (ppi_jobs_down[job].jobname, diff_job.jobname))
-#analysis_jobfile.write('order %s after %s\n' % ())
-if set([1,4,5,7,8,9]).issubset(includes):
+if set([1,4,5,7,8,9]).issubset(includes): #report
+    analysis_jobfile.write('order %s after %s\n' % (result_report_job.jobname, kobas_path_job.jobname))
     for job in go_jobs_all:
         analysis_jobfile.write('order %s after %s\n' % (result_report_job.jobname, go_jobs_all[job].jobname))
-    analysis_jobfile.write('order %s after %s\n' % (result_report_job.jobname, kobas_path_job.jobname))
     for job in ppi_jobs_all:
         analysis_jobfile.write('order %s after %s\n' % (result_report_job.jobname, ppi_jobs_all[job].jobname))
 else:
     for job in saturation_jobs:
         analysis_jobfile.write('order %s after %s\n' % (result_report_job.jobname, saturation_jobs[job].jobname))
     for job in density_jobs:
-        analysis_jobfile.write('order %s after %s\n' % (result_report_job.jobname, saturation_jobs[job].jobname))
+        analysis_jobfile.write('order %s after %s\n' % (result_report_job.jobname, density_jobs[job].jobname))
 
 ## logdir
 analysis_jobfile.write('log_dir %s\n' %(logdir))
@@ -1140,7 +1134,23 @@ analysis_jobfile.close()
 open(root_dir+'/sjm_Analysis.sh','w').write('/PUBLIC/software/public/System/sjm-1.2.0/bin/sjm %s \n' %(logdir+'/'+project+'_analysis.JOB'))
 assert not os.system('chmod +x %s' % (root_dir+'/sjm_Analysis.sh'))
 ################################# Analysis END ###################################
-######################### Report and data release BEGIN ##########################
+######################### data release and byebye BEGIN ##########################
+def data_release():
+    dr = root_dir+'/data_release.sh'
+    cmd = 'python %s' % dataRelease
+    if not os.path.exists(dr):
+        open(dr,'w').write(cmd)
+    else:
+        exit("#data_release.py already exists!#")
+def bye_bye():
+    bye = root_dir+'/byebye.sh'
+    cmd = 'python %s' % byeBye
+    if not os.path.exists(bye):
+        open(bye,'w').write(cmd)
+    else:
+        exit("##byebye.sh already exits!##")
 
-########################## Report and data release END ###########################
-
+##data release and byebye
+data_release()
+bye_bye()
+########################## data release and byebye END ###########################
